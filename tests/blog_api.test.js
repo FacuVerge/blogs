@@ -31,18 +31,19 @@ describe('when there is initially some blogs saved', () => {
     test('blogs are returned as json', async () => {
         await api
             .get('/api/blogs')
+            .auth(token, {type: "bearer"})
             .expect(200)
             .expect('Content-Type', /application\/json/)
     })
 
     test('there are two blogs', async () => {
-        const response = await api.get('/api/blogs')
+        const response = await api.get('/api/blogs').auth(token, {type: "bearer"})
       
         assert.strictEqual(response.body.length, helper.initialBlogs.length)
     })
       
     test('the first blog is about HTTP methods', async () => {
-        const response = await api.get('/api/blogs')
+        const response = await api.get('/api/blogs').auth(token, {type: "bearer"})
       
         const titles = response.body.map(e => e.title)
         assert(titles.includes('Dracula'))
@@ -55,6 +56,7 @@ describe('when there is initially some blogs saved', () => {
       
         const resultBlog = await api
             .get(`/api/blogs/${blogToView.id}`)
+            .auth(token, {type: "bearer"})
             .expect(200)
             .expect('Content-Type', /application\/json/)
       
@@ -69,6 +71,7 @@ describe('when there is initially some blogs saved', () => {
       
         const resultBlog = await api
             .get(`/api/blogs/${blogToView.id}`)
+            .auth(token, {type: "bearer"})
             .expect(200)
             .expect('Content-Type', /application\/json/)
       
@@ -149,20 +152,28 @@ describe('when there is initially some blogs saved', () => {
     })
 
     test('a blog can be deleted', async () => {
-        const blogsAtStart = await helper.blogsInDb()
-        const blogToDelete = blogsAtStart[0]
-      
-      
+        const newBlog = {
+            title: "A new mindblowing blog",
+            url: "ghdghdghdg",
+            author: "Me"
+        }
+
+        const blogId = (await api
+            .post('/api/blogs')
+            .auth(token, {type: "bearer"})
+            .send(newBlog)
+            .expect(201))
+            .body.id
+
         await api
-            .delete(`/api/blogs/${blogToDelete.id}`)
+            .delete(`/api/blogs/${blogId}`)
+            .auth(token, {type: "bearer"})
             .expect(204)
-        
+      
         const blogsAtEnd = await helper.blogsInDb()
-      
         const titles = blogsAtEnd.map(r => r.title)
-        assert(!titles.includes(blogToDelete.title))
-      
-        assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length - 1)
+        assert(!titles.includes(newBlog.title))
+    
     })
 
 })
